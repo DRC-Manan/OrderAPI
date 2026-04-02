@@ -6,5 +6,7 @@ namespace OAPI.Application.Repository
 	{
 		Task AddAsync(Order order);
 		Task<Order?> GetByIdAsync(int orderId);
+		Task<(IEnumerable<Order>, int)> GetOrdersAsync(string email, int page, int pageSize);
+		Task<int> GetOrdersCountAsync(string email);
 	}
 }

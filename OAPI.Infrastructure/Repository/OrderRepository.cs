@@ -23,5 +23,21 @@ namespace OAPI.Infrastructure.Repository
 		{
 			throw new NotImplementedException();
 		}
+
+		public async Task<(IEnumerable<Order>, int)> GetOrdersAsync(string email, int page, int pageSize)
+		{
+			var query = _dbContext.Orders.Where(o => o.CustomerEmail == email);
+			var totalCount = await query.CountAsync();
+			var orders = await query
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+			return (orders, totalCount);
+		}
+
+		public async Task<int> GetOrdersCountAsync(string email)
+		{
+			return await _dbContext.Orders.CountAsync(o => o.CustomerEmail == email);
+		}
 	}
 }

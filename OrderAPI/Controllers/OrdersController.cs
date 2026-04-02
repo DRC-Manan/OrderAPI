@@ -1,5 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OAPI.Application.Comman;
+using OAPI.Application.Commands;
+using OAPI.Application.Commands.CreateOrder;
+using OAPI.Application.DTO;
+using OAPI.Application.Queries;
+using OAPI.Application.Queries.GetOrder;
 using OAPI.Application.Repository;
 using OAPI.Domain.Entity;
 
@@ -9,23 +15,36 @@ namespace OrderAPI.Controllers
 	[ApiController]
 	public class OrdersController : ControllerBase
 	{
-		private readonly IOrderRepository _orderRepository;
-		
-		public OrdersController(IOrderRepository orderRepository)
+		private readonly ICommandHandler<CreateOrderCommand, Result<Guid>> _handler;
+		private readonly IQueryHandler<GetOrdersQuery, PageResult<OrderDto>> _queryHandler;
+
+		public OrdersController(ICommandHandler<CreateOrderCommand, Result<Guid>> handler
+			, IQueryHandler<GetOrdersQuery, PageResult<OrderDto>> queryHandler)
 		{
-			_orderRepository = orderRepository;
+			_handler = handler;
+			_queryHandler = queryHandler;
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> CreateOrder(Order order)
+		public async Task<IActionResult> CreateOrder(CreateOrderCommand command)
 		{
-			if (order == null)
+			if (command == null)
 			{
 				return BadRequest();
 			}
+			var orderId = await _handler.Handle(command);
+			return Ok(orderId);
+		}
 
-			await _orderRepository.AddAsync(order);
-			return Ok(order.OrderId);
+		[HttpGet]
+		public async Task<IActionResult> GetOrders([FromQuery] GetOrdersQuery query)
+		{
+			if (query == null)
+			{
+				return BadRequest();
+			}
+			var result = await _queryHandler.Handle(query);
+			return Ok(result);
 		}
 	}
 }
