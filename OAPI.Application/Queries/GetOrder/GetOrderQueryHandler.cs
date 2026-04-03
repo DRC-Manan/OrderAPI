@@ -1,7 +1,9 @@
-﻿using OAPI.Application.Comman;
+﻿using Microsoft.Extensions.Logging;
+using OAPI.Application.Comman;
 using OAPI.Application.DTO;
 using OAPI.Application.Repository;
 using OAPI.Domain.Entity;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +15,19 @@ namespace OAPI.Application.Queries.GetOrder
 	public class GetOrderQueryHandler : IQueryHandler<GetOrdersQuery, PageResult<OrderDto>>
 	{
 		private readonly IOrderRepository _orderRepository;
+		private readonly ILogger<GetOrderQueryHandler> _logger;
 
-		public GetOrderQueryHandler(IOrderRepository orderRepository)
+		public GetOrderQueryHandler(IOrderRepository orderRepository, ILogger<GetOrderQueryHandler> logger)
 		{
 			_orderRepository = orderRepository;
+			_logger = logger;
 		}
 
 		public async Task<PageResult<OrderDto>> Handle(GetOrdersQuery query)
 		{
+			_logger.LogInformation("Fetching orders for {Email}", query.Email);
+			_logger.LogInformation("Fetching orders for {Email} Page {Page} Size {Size}", query.Email, query.Page, query.PageSize);
+
 			var (orders, totalCount) = await _orderRepository.GetOrdersAsync(query.Email, query.Page, query.PageSize);
 
 			var orderDtos = orders.Select(o => new OrderDto

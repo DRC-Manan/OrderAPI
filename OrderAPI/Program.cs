@@ -9,12 +9,19 @@ using OAPI.Application.Queries;
 using OAPI.Application.Queries.GetOrder;
 using OAPI.Application.Repository;
 using OAPI.Application.Validators;
-using OAPI.Domain.Entity;
 using OAPI.Infrastructure;
 using OAPI.Infrastructure.Repository;
 using OrderAPI.Middleware;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+	.CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 
@@ -44,10 +51,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-	app.UseDeveloperExceptionPage();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 
