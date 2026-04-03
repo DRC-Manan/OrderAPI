@@ -1,5 +1,6 @@
 using FluentValidation; // Add this using directive
 using FluentValidation.AspNetCore; // Add this using directive
+using Hangfire;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
@@ -35,8 +36,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
+builder.Services.AddHangfire(config =>
+	config.UseSqlServerStorage(builder.Configuration.GetConnectionString("SqlConnection")));
+
+builder.Services.AddHangfireServer();
 
 // Register caching service
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
@@ -46,6 +52,9 @@ builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, Result<Guid>>, Cr
 
 // Register query handler as the implementation for the IQueryHandler interface
 builder.Services.AddScoped<IQueryHandler<GetOrdersQuery, PageResult<OrderDto>>, GetOrderQueryHandler>();
+
+// Register email service
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Register FluentValidation validators
 builder.Services.AddFluentValidationAutoValidation();
@@ -59,6 +68,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+app.UseHangfireDashboard(); // UI: /hangfire
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();

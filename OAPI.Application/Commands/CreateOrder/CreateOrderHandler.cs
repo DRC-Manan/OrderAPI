@@ -2,13 +2,13 @@
 using OAPI.Application.Repository;
 using OAPI.Domain.Entity;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OAPI.Application.Services;
+using Hangfire;
 
 namespace OAPI.Application.Commands.CreateOrder
 {
@@ -17,13 +17,17 @@ namespace OAPI.Application.Commands.CreateOrder
 		private readonly IOrderRepository _orderRepository;
 		private readonly ILogger<CreateOrderHandler> _logger;
 		private readonly ICacheService _cacheService;
+		private readonly IBackgroundJobClient _backgroundJobClient;
 
-		public CreateOrderHandler(IOrderRepository orderRepository, ILogger<CreateOrderHandler> logger
-			, ICacheService cacheService)
+		public CreateOrderHandler(IOrderRepository orderRepository
+			, ILogger<CreateOrderHandler> logger
+			, ICacheService cacheService
+			, IBackgroundJobClient backgroundJobClient)
 		{
 			_orderRepository = orderRepository;
 			_logger = logger;
 			_cacheService = cacheService;
+			_backgroundJobClient = backgroundJobClient;
 		}
 
 		public async Task<Result<Guid>> Handle(CreateOrderCommand command)
@@ -33,7 +37,9 @@ namespace OAPI.Application.Commands.CreateOrder
 			var order = new Order(command.Email, command.Amount);
 			await _orderRepository.AddAsync(order);
 
-			await _cacheService.RemoveAsync($"orders:all:{command.Email}:*");
+			await _cacheService.RemoveAsync($"orders:all:{command.Email}");
+
+			_backgroundJobClient.Enqueue<IEmailService>(x => x.SendOrderConfirmationAsync(command.Email, order.OrderId));
 
 			_logger.LogInformation("Order created with ID {OrderId}", order.OrderId);
 			return Result<Guid>.Success(order.OrderId);
