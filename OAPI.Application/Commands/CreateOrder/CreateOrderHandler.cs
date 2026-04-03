@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OAPI.Application.Services;
 
 namespace OAPI.Application.Commands.CreateOrder
 {
@@ -15,11 +16,14 @@ namespace OAPI.Application.Commands.CreateOrder
 	{
 		private readonly IOrderRepository _orderRepository;
 		private readonly ILogger<CreateOrderHandler> _logger;
+		private readonly ICacheService _cacheService;
 
-		public CreateOrderHandler(IOrderRepository orderRepository, ILogger<CreateOrderHandler> logger)
+		public CreateOrderHandler(IOrderRepository orderRepository, ILogger<CreateOrderHandler> logger
+			, ICacheService cacheService)
 		{
 			_orderRepository = orderRepository;
 			_logger = logger;
+			_cacheService = cacheService;
 		}
 
 		public async Task<Result<Guid>> Handle(CreateOrderCommand command)
@@ -28,6 +32,8 @@ namespace OAPI.Application.Commands.CreateOrder
 
 			var order = new Order(command.Email, command.Amount);
 			await _orderRepository.AddAsync(order);
+
+			await _cacheService.RemoveAsync($"orders:all:{command.Email}:*");
 
 			_logger.LogInformation("Order created with ID {OrderId}", order.OrderId);
 			return Result<Guid>.Success(order.OrderId);
