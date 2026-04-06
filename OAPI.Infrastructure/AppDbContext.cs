@@ -12,6 +12,7 @@ namespace OAPI.Infrastructure
 	{
 		public DbSet<Order> Orders => Set<Order>();
 		public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+		public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
 		public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
 		{
