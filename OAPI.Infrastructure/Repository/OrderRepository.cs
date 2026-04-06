@@ -14,8 +14,7 @@ namespace OAPI.Infrastructure.Repository
 
 		public async Task AddAsync(Order order)
 		{
-			var orderR = new Order(order.CustomerEmail, order.TotalAmount);
-			await _dbContext.Orders.AddAsync(orderR);
+			await _dbContext.Orders.AddAsync(order);
 			await _dbContext.SaveChangesAsync();
 		}
 

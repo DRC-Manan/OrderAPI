@@ -12,8 +12,10 @@ using OAPI.Application.Repository;
 using OAPI.Application.Services;
 using OAPI.Application.Validators;
 using OAPI.Infrastructure;
+using OAPI.Infrastructure.Hangfire;
 using OAPI.Infrastructure.Repository;
 using OAPI.Infrastructure.Services;
+using OrderAPI.Extensions;
 using OrderAPI.Middleware;
 using Serilog;
 
@@ -55,6 +57,8 @@ builder.Services.AddScoped<IQueryHandler<GetOrdersQuery, PageResult<OrderDto>>, 
 
 // Register email service
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
+builder.Services.AddScoped<OutboxProcessor>();
 
 // Register FluentValidation validators
 builder.Services.AddFluentValidationAutoValidation();
@@ -71,7 +75,7 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHangfireDashboard(); // UI: /hangfire
-
+app.RegisterRecurringJobs();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
