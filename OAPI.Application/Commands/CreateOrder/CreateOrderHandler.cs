@@ -44,7 +44,7 @@ namespace OAPI.Application.Commands.CreateOrder
 
 			var orderCreatedEvent = new OrderCreatedEvent(order.OrderId, command.Email);
 
-			var outboxMessage = new OutboxMessage(nameof(OrderCreatedEvent), JsonConvert.SerializeObject(orderCreatedEvent));
+			var outboxMessage = new OutboxMessage(typeof(OrderCreatedEvent).AssemblyQualifiedName, JsonConvert.SerializeObject(orderCreatedEvent));
 
 			await _outboxMessageRepository.AddAsync(outboxMessage);
 

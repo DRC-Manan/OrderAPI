@@ -6,6 +6,7 @@ using OAPI.Application.Comman;
 using OAPI.Application.Commands;
 using OAPI.Application.Commands.CreateOrder;
 using OAPI.Application.DTO;
+using OAPI.Application.Event;
 using OAPI.Application.Queries;
 using OAPI.Application.Queries.GetOrder;
 using OAPI.Application.Repository;
@@ -63,6 +64,10 @@ builder.Services.AddScoped<OutboxProcessor>();
 // Register FluentValidation validators
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderValidator>();
+
+// Register event dispatcher and handlers
+builder.Services.AddScoped<IEventDispatcher, EventDispatcher>();
+builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedEventHandler>();
 
 var app = builder.Build();
 

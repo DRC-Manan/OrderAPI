@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OAPI.Application.Event;
 using OAPI.Application.Repository;
 using OAPI.Application.Services;
@@ -11,16 +10,19 @@ namespace OAPI.Infrastructure.Hangfire
 	public class OutboxProcessor
 	{
 		private readonly AppDbContext _context;
-		private readonly IEmailService _emailService;
+		//private readonly IEmailService _emailService;
+		private readonly IEventDispatcher _dispatcher;
 		private readonly ILogger<OutboxProcessor> _logger;
 
 		public OutboxProcessor(
 			AppDbContext context,
-			IEmailService emailService,
+			//IEmailService emailService,
+			IEventDispatcher dispatcher,
 			ILogger<OutboxProcessor> logger)
 		{
 			_context = context;
-			_emailService = emailService;
+			//_emailService = emailService;
+			_dispatcher = dispatcher;
 			_logger = logger;
 		}
 
@@ -45,13 +47,8 @@ namespace OAPI.Infrastructure.Hangfire
 						continue;
 					}
 
-					// Process event
-					if (message.Type == nameof(OrderCreatedEvent))
-					{
-						var evt = JsonConvert.DeserializeObject<OrderCreatedEvent>(message.MessageContent);
-
-						await _emailService.SendOrderConfirmationAsync(evt.Email, evt.OrderId);
-					}
+					// Dispatch the event. DispatchAsync is responsible for resolving the type (Type.GetType).
+					await _dispatcher.DispatchAsync(message.Type, message.MessageContent);
 
 					// ✅ Save Inbox entry
 					_context.InboxMessages.Add(new InboxMessage(message.OutboxMessageId));
