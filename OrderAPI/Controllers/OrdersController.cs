@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
@@ -11,7 +12,8 @@ using OAPI.Domain.Entity;
 
 namespace OrderAPI.Controllers
 {
-	[Route("api/[controller]")]
+	[ApiVersion("1.0")]
+	[Route("api/v{version:apiVersion}/orders")]
 	[ApiController]
 	public class OrdersController : ControllerBase
 	{
@@ -36,6 +38,7 @@ namespace OrderAPI.Controllers
 			return Ok(orderId);
 		}
 
+		[MapToApiVersion("1.0")]
 		[HttpGet]
 		public async Task<IActionResult> GetOrders([FromQuery] GetOrdersQuery query)
 		{

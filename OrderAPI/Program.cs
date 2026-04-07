@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer; // <- Required namespace for AddVersionedA
 using FluentValidation; // Add this using directive
 using FluentValidation.AspNetCore; // Add this using directive
 using Hangfire;
@@ -16,6 +18,7 @@ using OAPI.Infrastructure;
 using OAPI.Infrastructure.Hangfire;
 using OAPI.Infrastructure.Repository;
 using OAPI.Infrastructure.Services;
+using OrderAPI;
 using OrderAPI.Extensions;
 using OrderAPI.Middleware;
 using Serilog;
@@ -34,7 +37,26 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+	options.SwaggerDoc("v1", new() { Title = "API V1", Version = "v1" });
+	options.SwaggerDoc("v2", new() { Title = "API V2", Version = "v2" });
+});
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
+
+builder.Services
+	.AddApiVersioning(options =>
+	{
+		options.AssumeDefaultVersionWhenUnspecified = true;
+		options.DefaultApiVersion = new ApiVersion(1, 0);
+		options.ReportApiVersions = true;
+		options.ApiVersionReader = new UrlSegmentApiVersionReader();
+	})
+	.AddApiExplorer(options =>
+	{
+		options.GroupNameFormat = "'v'VVV"; // v1, v1.0
+		options.SubstituteApiVersionInUrl = true;
+	});
 
 builder.Services.AddMemoryCache();
 
@@ -75,7 +97,17 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+	{
+		var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+		foreach (var description in provider.ApiVersionDescriptions)
+		{
+			options.SwaggerEndpoint(
+				$"/swagger/{description.GroupName}/swagger.json",
+				description.GroupName.ToUpperInvariant());
+		}
+	});
 }
 
 
