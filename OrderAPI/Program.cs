@@ -22,6 +22,7 @@ using OrderAPI;
 using OrderAPI.Extensions;
 using OrderAPI.Middleware;
 using Serilog;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,31 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderValidator>();
 builder.Services.AddScoped<IEventDispatcher, EventDispatcher>();
 builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedEventHandler>();
 
+#region Add Rate Limiting
+
+// Set a global rate limit policy that applies to all endpoints.
+builder.Services.AddRateLimiter(options =>
+{
+	// When the limit is exceeded, return a 429 Too Many Requests response.
+	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+	// FixedWindowPolicy is the name of the policy that we will apply to our endpoints.
+	options.AddPolicy("FixedWindowPolicy", httpContext =>
+		RateLimitPartition.GetFixedWindowLimiter(
+			// Use the client's IP address as the partition key.
+			// If it's not available, use "unknown".
+			partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+			factory: partition => new FixedWindowRateLimiterOptions
+			{
+				PermitLimit = 10, // Max 10 requests
+				Window = TimeSpan.FromSeconds(10), // Per 10 seconds
+				QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+				QueueLimit = 0 // No queuing, reject immediately when limit is reached
+			}));
+});
+
+#endregion
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -110,6 +136,8 @@ if (app.Environment.IsDevelopment())
 	});
 }
 
+// Option 1: Apply Globally (Simple)
+app.UseRateLimiter();
 
 app.UseHangfireDashboard(); // UI: /hangfire
 app.RegisterRecurringJobs();

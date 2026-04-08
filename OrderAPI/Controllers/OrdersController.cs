@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
 using OAPI.Application.Commands.CreateOrder;
@@ -14,6 +15,8 @@ namespace OrderAPI.Controllers
 {
 	[ApiVersion("1.0")]
 	[Route("api/v{version:apiVersion}/orders")]
+	// Option 2: Apply Per Controller / Endpoint (Recommended)
+	[EnableRateLimiting("FixedWindowPolicy")]
 	[ApiController]
 	public class OrdersController : ControllerBase
 	{
