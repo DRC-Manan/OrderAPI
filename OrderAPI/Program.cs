@@ -1,9 +1,10 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer; // <- Required namespace for AddVersionedA
 using FluentValidation; // Add this using directive
 using FluentValidation.AspNetCore; // Add this using directive
 using Hangfire;
 using Microsoft.EntityFrameworkCore; // Add this using directive
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
 using OAPI.Application.Commands.CreateOrder;
@@ -22,6 +23,11 @@ using OrderAPI;
 using OrderAPI.Extensions;
 using OrderAPI.Middleware;
 using Serilog;
+using System.Buffers.Text;
+using System.Diagnostics.Metrics;
+using System.Reflection;
+using System.Runtime.ConstrainedExecution;
+using System.Runtime.Intrinsics.X86;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -122,6 +128,20 @@ builder.Services.AddRateLimiter(options =>
 	//		//partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 
 	//		// Useful when authentication is added, to limit per user instead of per IP.
+	//		------------------------------
+	//		//	Your “per user” logic depends on this key:
+	//		//	RemoteIpAddress
+	//		
+	//		//👉 This is not always ideal in production
+	//		
+	//		//⚠️ Problem with IP - based limiting
+	//		//Multiple users behind same NAT → same IP → ❌ unfair throttling
+	//		//Mobile users → IP changes → ❌ bypass limit
+	//		//✅ Better approach(Production)
+	//		
+	//		//Use User ID => httpContext.User.Identity?.Name ?? "anonymous"
+	//		// or API Key instead => httpContext.Request.Headers["X-Api-Key"]
+	//		------------------------------
 	//		partitionKey: httpContext.User?.Identity?.Name ?? "anonymous",
 
 	//		factory: partition => new FixedWindowRateLimiterOptions
