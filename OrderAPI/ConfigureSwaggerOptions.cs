@@ -18,13 +18,13 @@ namespace OrderAPI
 		{
 			foreach (var description in _provider.ApiVersionDescriptions)
 			{
-				options.SwaggerDoc(
-					description.GroupName,
-					new OpenApiInfo
-					{
-						Title = $"Order API {description.ApiVersion}",
-						Version = description.ApiVersion.ToString()
-					});
+				//options.SwaggerDoc(
+				//	description.GroupName,
+				//	new OpenApiInfo
+				//	{
+				//		Title = $"Order API {description.ApiVersion}",
+				//		Version = description.ApiVersion.ToString()
+				//	});
 			}
 		}
 	}

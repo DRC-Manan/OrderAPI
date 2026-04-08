@@ -30,6 +30,7 @@ namespace OrderAPI.Controllers
 			_queryHandler = queryHandler;
 		}
 
+		[MapToApiVersion("1.0")]
 		[HttpPost]
 		[EnableRateLimiting("strict")]
 		public async Task<IActionResult> CreateOrder(CreateOrderCommand command)
