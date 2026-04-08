@@ -55,7 +55,33 @@ builder.Services.AddSwaggerGen(options =>
 {
 	options.SwaggerDoc("v1", new() { Title = "API V1", Version = "v1" });
 	options.SwaggerDoc("v2", new() { Title = "API V2", Version = "v2" });
+
+	options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+	{
+		Name = "Authorization",
+		Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+		Scheme = "bearer",
+		BearerFormat = "JWT",
+		In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+		Description = "Enter JWT token like: Bearer {your token}"
+	});
+
+	options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+	{
+		{
+			new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+			{
+				Reference = new Microsoft.OpenApi.Models.OpenApiReference
+				{
+					Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+					Id = "Bearer"
+				}
+			},
+			new string[] {}
+		}
+	});
 });
+
 builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 builder.Services
@@ -257,8 +283,8 @@ builder.Services.AddAuthorization(options =>
 	options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
 
 	// More granular policies based on claims (if needed)
-	options.AddPolicy("CanCreateOrder", policy =>policy.RequireClaim("role", "Admin"));
-	options.AddPolicy("CanViewOrder", policy => policy.RequireClaim("role", "Admin, User"));
+	options.AddPolicy("CanCreateOrder", policy =>policy.RequireClaim("companyrole", "Admin"));
+	options.AddPolicy("CanViewOrder", policy => policy.RequireClaim("companyrole", "Admin", "User"));
 });
 
 #endregion

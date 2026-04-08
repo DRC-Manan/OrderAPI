@@ -25,7 +25,8 @@ namespace OAPI.Infrastructure.Services
 			var claims = new[]
 			{
 				new Claim(ClaimTypes.Email, email),
-				new Claim(ClaimTypes.Role, role)
+				new Claim(ClaimTypes.Role, role),
+				new Claim("companyrole", role)
 			};
 
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

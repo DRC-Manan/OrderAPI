@@ -1,6 +1,9 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
+using System.Security.Claims;
 
 namespace OrderAPI.Controllers
 {
@@ -11,6 +14,7 @@ namespace OrderAPI.Controllers
 	{
 		[MapToApiVersion("2.0")]
 		[HttpGet]
+		[Authorize(Roles = "User")]
 		public IActionResult Get()
 		{
 			return Ok("This is version 2 of the Orders API.");
