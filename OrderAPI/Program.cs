@@ -195,6 +195,24 @@ builder.Services.AddRateLimiter(options =>
 
 #endregion
 
+// Remove the Server header for security hardening / Disable Server Header (Important)
+builder.WebHost.ConfigureKestrel(options =>
+{
+	options.AddServerHeader = false;
+});
+
+
+// Configure CORS to allow requests from the frontend application (Important for Real APIs)
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy("AllowFrontend", policy =>
+	{
+		policy.WithOrigins("https://yourfrontend.com")
+			  .AllowAnyHeader()
+			  .AllowAnyMethod();
+	});
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -214,16 +232,31 @@ if (app.Environment.IsDevelopment())
 	});
 }
 
+// Environment-Based Configuration
+// In production, we want to enforce security best practices like HTTPS and HSTS.
+if (!app.Environment.IsDevelopment())
+{
+	// Enforce HSTS (HTTP Strict Transport Security)
+	app.UseHsts();
+
+	// Enforce HTTPS
+	// HTTPS is essential for securing data in transit, protecting
+	app.UseHttpsRedirection();
+}
+
 // Option 1: Apply Globally (Simple)
 app.UseRateLimiter();
 
 app.UseHangfireDashboard(); // UI: /hangfire
 app.RegisterRecurringJobs();
+
+// Apply CORS policy
+app.UseCors("AllowFrontend");
+
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
