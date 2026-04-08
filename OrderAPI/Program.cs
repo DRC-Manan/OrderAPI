@@ -4,12 +4,15 @@ using Azure.Core;
 using FluentValidation; // Add this using directive
 using FluentValidation.AspNetCore; // Add this using directive
 using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
 using OAPI.Application.Commands.CreateOrder;
+using OAPI.Application.Commands.Login;
 using OAPI.Application.DTO;
 using OAPI.Application.Event;
 using OAPI.Application.Queries;
@@ -83,8 +86,11 @@ builder.Services.AddHangfireServer();
 // Register caching service
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 // Register command handler as the implementation for the ICommandHandler interface
 builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, Result<Guid>>, CreateOrderHandler>();
+builder.Services.AddScoped<ICommandHandler<LoginCommand, Result<string>>, LoginHandler>();
 
 // Register query handler as the implementation for the IQueryHandler interface
 builder.Services.AddScoped<IQueryHandler<GetOrdersQuery, PageResult<OrderDto>>, GetOrderQueryHandler>();
@@ -213,6 +219,50 @@ builder.Services.AddCors(options =>
 	});
 });
 
+#region Authentication & Authorization
+
+// Configure Authentication
+builder.Services
+	.AddAuthentication(options =>
+	{
+		options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+		options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	})
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidateIssuerSigningKey = true,
+
+			ValidIssuer = builder.Configuration["Jwt:Issuer"],
+			ValidAudience = builder.Configuration["Jwt:Audience"],
+			IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+			ClockSkew = TimeSpan.Zero // Optional: Reduce default clock skew of 5 minutes
+		};
+	});
+
+// Enable Authorization
+
+// General authorization
+//builder.Services.AddAuthorization();
+
+// Role-based policies authorization
+builder.Services.AddAuthorization(options =>
+{
+	// Define policies based on user roles
+	options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+	options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
+
+	// More granular policies based on claims (if needed)
+	options.AddPolicy("CanCreateOrder", policy =>policy.RequireClaim("role", "Admin"));
+	options.AddPolicy("CanViewOrder", policy => policy.RequireClaim("role", "Admin, User"));
+});
+
+#endregion
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -258,6 +308,8 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
+// Authentication should come before Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -33,6 +34,7 @@ namespace OrderAPI.Controllers
 		[MapToApiVersion("1.0")]
 		[HttpPost]
 		[EnableRateLimiting("strict")]
+		[Authorize(Policy = "CanCreateOrder")]
 		public async Task<IActionResult> CreateOrder(CreateOrderCommand command)
 		{
 			if (command == null)
@@ -46,6 +48,7 @@ namespace OrderAPI.Controllers
 		[MapToApiVersion("1.0")]
 		[HttpGet]
 		[EnableRateLimiting("loose")]
+		[Authorize(Policy = "CanViewOrder")]
 		public async Task<IActionResult> GetOrders([FromQuery] GetOrdersQuery query)
 		{
 			if (query == null)
