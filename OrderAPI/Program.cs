@@ -114,19 +114,43 @@ builder.Services.AddRateLimiter(options =>
 		await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);
 	};
 
-	// FixedWindowPolicy is the name of the policy that we will apply to our endpoints.
-	options.AddPolicy("FixedWindowPolicy", httpContext =>
+	//// FixedWindowPolicy is the name of the policy that we will apply to our endpoints.
+	//options.AddPolicy("FixedWindowPolicy", httpContext =>
+	//	RateLimitPartition.GetFixedWindowLimiter(
+	//		//// Use the client's IP address as the partition key.
+	//		//// If it's not available, use "unknown".
+	//		//partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+
+	//		// Useful when authentication is added, to limit per user instead of per IP.
+	//		partitionKey: httpContext.User?.Identity?.Name ?? "anonymous",
+
+	//		factory: partition => new FixedWindowRateLimiterOptions
+	//		{
+	//			PermitLimit = 10, // Max 10 requests
+	//			Window = TimeSpan.FromSeconds(10), // Per 10 seconds
+	//			QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+	//			QueueLimit = 0 // No queuing, reject immediately when limit is reached
+	//		}));
+
+	options.AddPolicy("strict", httpContext =>
 		RateLimitPartition.GetFixedWindowLimiter(
-			// Use the client's IP address as the partition key.
-			// If it's not available, use "unknown".
-			partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-			factory: partition => new FixedWindowRateLimiterOptions
+			httpContext.Connection.RemoteIpAddress?.ToString(),
+			_ => new FixedWindowRateLimiterOptions
 			{
-				PermitLimit = 10, // Max 10 requests
-				Window = TimeSpan.FromSeconds(10), // Per 10 seconds
-				QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-				QueueLimit = 0 // No queuing, reject immediately when limit is reached
-			}));
+				PermitLimit = 5,
+				Window = TimeSpan.FromSeconds(10)
+			})
+	);
+
+	options.AddPolicy("loose", httpContext =>
+		RateLimitPartition.GetFixedWindowLimiter(
+			httpContext.Connection.RemoteIpAddress?.ToString(),
+			_ => new FixedWindowRateLimiterOptions
+			{
+				PermitLimit = 100,
+				Window = TimeSpan.FromMinutes(1)
+			})
+	);
 });
 
 #endregion

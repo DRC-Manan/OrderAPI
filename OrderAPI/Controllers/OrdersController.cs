@@ -15,8 +15,8 @@ namespace OrderAPI.Controllers
 {
 	[ApiVersion("1.0")]
 	[Route("api/v{version:apiVersion}/orders")]
-	// Option 2: Apply Per Controller / Endpoint (Recommended)
-	[EnableRateLimiting("FixedWindowPolicy")]
+	//// Option 2: Apply Per Controller / Endpoint (Recommended)
+	//[EnableRateLimiting("FixedWindowPolicy")]
 	[ApiController]
 	public class OrdersController : ControllerBase
 	{
@@ -31,6 +31,7 @@ namespace OrderAPI.Controllers
 		}
 
 		[HttpPost]
+		[EnableRateLimiting("strict")]
 		public async Task<IActionResult> CreateOrder(CreateOrderCommand command)
 		{
 			if (command == null)
@@ -43,6 +44,7 @@ namespace OrderAPI.Controllers
 
 		[MapToApiVersion("1.0")]
 		[HttpGet]
+		[EnableRateLimiting("loose")]
 		public async Task<IActionResult> GetOrders([FromQuery] GetOrdersQuery query)
 		{
 			if (query == null)
