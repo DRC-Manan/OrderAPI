@@ -28,7 +28,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure logging
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
+	.WriteTo.Console()
 	.CreateLogger();
 
 builder.Host.UseSerilog();
@@ -64,7 +64,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
+	options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
 builder.Services.AddHangfire(config =>
 	config.UseSqlServerStorage(builder.Configuration.GetConnectionString("SqlConnection")));
 
@@ -97,8 +97,22 @@ builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedEventHa
 // Set a global rate limit policy that applies to all endpoints.
 builder.Services.AddRateLimiter(options =>
 {
-	// When the limit is exceeded, return a 429 Too Many Requests response.
-	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+	//// When the limit is exceeded, return a 429 Too Many Requests response.
+	// options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+	// Custom 429 Response (Important for Real APIs)
+	options.OnRejected = async (context, cancellationToken) =>
+	{
+		context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+		context.HttpContext.Response.ContentType = "application/json";
+
+		var response = new
+		{
+			Message = "Too many requests. Please try again later.",
+		};
+
+		await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+	};
 
 	// FixedWindowPolicy is the name of the policy that we will apply to our endpoints.
 	options.AddPolicy("FixedWindowPolicy", httpContext =>
@@ -122,8 +136,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+	app.UseSwagger();
+	app.UseSwaggerUI(options =>
 	{
 		var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
