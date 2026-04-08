@@ -1,10 +1,12 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer; // <- Required namespace for AddVersionedA
+using Azure.Core;
 using FluentValidation; // Add this using directive
 using FluentValidation.AspNetCore; // Add this using directive
 using Hangfire;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Newtonsoft.Json.Linq;
 using OAPI.Application.Comman;
 using OAPI.Application.Commands;
 using OAPI.Application.Commands.CreateOrder;
@@ -25,10 +27,12 @@ using OrderAPI.Middleware;
 using Serilog;
 using System.Buffers.Text;
 using System.Diagnostics.Metrics;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.Intrinsics.X86;
 using System.Threading.RateLimiting;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -171,6 +175,22 @@ builder.Services.AddRateLimiter(options =>
 				Window = TimeSpan.FromMinutes(1)
 			})
 	);
+
+	// Token Bucket (Best for Burst Traffic)
+	// Meaning:
+	//		Bucket size(max capacity) = 20 tokens
+	//		Refill rate = 5 tokens every 10 seconds
+	//		Queue = 2 requests can wait if no tokens
+	options.AddPolicy("token", httpContext =>
+	RateLimitPartition.GetTokenBucketLimiter(
+		httpContext.Connection.RemoteIpAddress?.ToString(),
+		_ => new TokenBucketRateLimiterOptions
+		{
+			TokenLimit = 20,
+			TokensPerPeriod = 5,
+			ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+			QueueLimit = 2
+		}));
 });
 
 #endregion
