@@ -99,6 +99,8 @@ builder.Services
 	});
 
 builder.Services.AddMemoryCache();
+// Register caching service
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
@@ -109,8 +111,6 @@ builder.Services.AddHangfire(config =>
 
 builder.Services.AddHangfireServer();
 
-// Register caching service
-builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

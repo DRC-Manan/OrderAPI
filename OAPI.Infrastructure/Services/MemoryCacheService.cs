@@ -11,6 +11,7 @@ namespace OAPI.Infrastructure.Services
 	public class MemoryCacheService: ICacheService
 	{
 		private readonly IMemoryCache _memoryCache;
+		private static readonly List<string> _keys = new();
 
 		public MemoryCacheService(IMemoryCache memoryCache)
 		{
@@ -33,13 +34,19 @@ namespace OAPI.Infrastructure.Services
 			{
 				cacheEntryOptions.SetAbsoluteExpiration(expiration.Value);
 			}
+			_keys.Add(key);
 			_memoryCache.Set(key, value, cacheEntryOptions);
 			return Task.CompletedTask;
 		}
 
-		public Task RemoveAsync(string key)
+		public Task RemoveAsync(string prefix)
 		{
-			_memoryCache.Remove(key);
+			var keysToRemove = _keys.Where(k => k.StartsWith(prefix)).ToList();
+			foreach (var key in keysToRemove)
+			{
+				_memoryCache.Remove(key);
+				_keys.Remove(key);
+			}
 			return Task.CompletedTask;
 		}
 	}
