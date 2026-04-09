@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +42,19 @@ namespace OAPI.Infrastructure.Services
 				signingCredentials: creds);
 
 			return new JwtSecurityTokenHandler().WriteToken(token);
+		}
+
+		public string GenerateRefreshToken()
+		{
+			var randomBytes = RandomNumberGenerator.GetBytes(64);
+			return Convert.ToBase64String(randomBytes);
+		}
+
+		public string HashToken(string token)
+		{
+			using var sha256 = SHA256.Create();
+			var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+			return Convert.ToBase64String(bytes);
 		}
 	}
 }

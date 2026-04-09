@@ -113,10 +113,13 @@ builder.Services.AddHangfireServer();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Register command handler as the implementation for the ICommandHandler interface
 builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, Result<Guid>>, CreateOrderHandler>();
-builder.Services.AddScoped<ICommandHandler<LoginCommand, Result<string>>, LoginHandler>();
+builder.Services.AddScoped<ICommandHandler<LoginCommand, AuthResponse>, LoginHandler>();
+builder.Services.AddScoped<ICommandHandler<RefreshTokenCommand, AuthResponse>, RefreshTokenHandler>();
+builder.Services.AddScoped<ICommandHandler<LogoutCommand, Result<string>>, LogoutHandler>();
 
 // Register query handler as the implementation for the IQueryHandler interface
 builder.Services.AddScoped<IQueryHandler<GetOrdersQuery, PageResult<OrderDto>>, GetOrderQueryHandler>();
