@@ -21,7 +21,12 @@
 				context.Response.Headers["X-Correlation-ID"] = correlationId;
 				return Task.CompletedTask;
 			});
-			await _next(context);
+			//await _next(context);
+
+			using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
+			{
+				await _next(context);
+			}
 		}
 	}
 }

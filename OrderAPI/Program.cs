@@ -41,10 +41,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure logging
 Log.Logger = new LoggerConfiguration()
-	.WriteTo.Console()
+	.Enrich.FromLogContext()
+	//.Enrich.WithMachineName()
+	.Enrich.WithProperty("MachineName", Environment.MachineName)
+	//.Enrich.WithThreadId()
+	.Enrich.WithProperty("ThreadId", Environment.CurrentManagedThreadId)
+	.WriteTo.Console(outputTemplate:
+			"[{Timestamp:HH:mm:ss} {Level:u3}] [Corr:{CorrelationId}] [Machine:{MachineName}] [Thread:{ThreadId}] {Message:lj}{NewLine}{Exception}")
+	//.WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
 	.CreateLogger();
 
 builder.Host.UseSerilog();
+
+// Clear default logging providers and use Serilog
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog();
 
 // Add services to the container.
 
@@ -331,6 +342,8 @@ app.RegisterRecurringJobs();
 
 // Apply CORS policy
 app.UseCors("AllowFrontend");
+
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();

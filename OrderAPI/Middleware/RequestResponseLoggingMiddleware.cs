@@ -35,6 +35,10 @@ namespace OrderAPI.Middleware
 				// Read Response Body
 				var responseText = await ReadResponseBody(context.Response);
 
+				// Mask sensitive fields
+				requestBody = Mask(requestBody);
+				responseText = Mask(responseText);
+
 				// Log everything
 				StringBuilder logString = new StringBuilder();
 
@@ -97,6 +101,16 @@ namespace OrderAPI.Middleware
 			response.Body.Seek(0, SeekOrigin.Begin);
 
 			return text;
+		}
+
+		private string Mask(string input)
+		{
+			if (string.IsNullOrEmpty(input)) return input;
+
+			return input
+				.Replace("password", "****")
+				.Replace("accessToken", "****")
+				.Replace("refreshToken", "****");
 		}
 	}
 }
