@@ -109,9 +109,21 @@ builder.Services
 		options.SubstituteApiVersionInUrl = true;
 	});
 
-builder.Services.AddMemoryCache();
-// Register caching service
-builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+//builder.Services.AddMemoryCache();
+//// Register caching service
+//builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+
+#region Add Redis Catch
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+	options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+	options.InstanceName = "OrderAPI_";
+});
+
+builder.Services.AddScoped<ICacheService, CacheService>();
+
+#endregion
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
@@ -241,6 +253,8 @@ builder.Services.AddRateLimiter(options =>
 
 #endregion
 
+
+
 // Remove the Server header for security hardening / Disable Server Header (Important)
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -337,7 +351,7 @@ if (!app.Environment.IsDevelopment())
 // Option 1: Apply Globally (Simple)
 app.UseRateLimiter();
 
-app.UseHangfireDashboard(); // UI: /hangfire
+app.UseHangfireDashboard("/hangfire"); // UI: /hangfire
 app.RegisterRecurringJobs();
 
 // Apply CORS policy

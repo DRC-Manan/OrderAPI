@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+    redis:
+        image: redis:latest
+        container_name: redis
+        ports:
+            - "6379:6379"
+    api:
+        build: 
+            context: .
+            dockerfile: OrderAPI/Dockerfile
+        ports:
+            - "5000:80"
+            - "5001:443"
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Development
+            - ASPNETCORE_Kestrel__Endpoints__Http__Url=http://+:80
+            - ASPNETCORE_Kestrel__Endpoints__Https__Url=https://+:443
+            - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+            - ASPNETCORE_Kestrel__Certificates__Default__Password=password123
+            - Jwt__Key=THIS_IS_SUPER_SECRET_KEY_1234567
+            # - ConnectionStrings__SqlConnection=Server=MANAN-PRAJAPATI;Database=OMS;Trusted_Connection=True;TrustServerCertificate=True;
+            - ConnectionStrings__SqlConnection=Server=host.docker.internal;Database=OMS;User Id=sa;Password=Drc@1234;TrustServerCertificate=True;
+            - ConnectionStrings__RedisConnection=redis:6379
+        volumes:
+            - C:\Users\Manan.Prajapati\.aspnet\https:/https:ro
+    
